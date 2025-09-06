@@ -38,10 +38,9 @@ Berikut adalah tabel utama yang digunakan pada aplikasi ini:
 |----|-----------------------|---------------------------------------------------------------------------|
 | 1  | **users**             | Data pengguna/admin sistem.                                               |
 | 2  | **customers**         | Data pelanggan (nama, telepon, email).                                    |
-| 3  | **category**          | Kategori produk.                                                          |
-| 4  | **products**          | Data produk (kode, nama, harga, stok, kategori).                          |
-| 5  | **transactions**      | Data transaksi (no transaksi, user, customer, subtotal, diskon, total).   |
-| 6  | **transactions_items**| Detail item transaksi (produk, qty, harga, subtotal).                     |
+| 3  | **products**          | Data produk (kode, nama, harga, stok, kategori).                          |
+| 4  | **transactions**      | Data transaksi (no transaksi, user, customer, subtotal, diskon, total).   |
+| 5  | **transactions_items**| Detail item transaksi (produk, qty, harga, subtotal).                     |
 
 ### 📷 Diagram Database
 ![Database Schema](https://github.com/RasyaRazaqaSetiawan/pos-laravel-react/blob/f2c486824dcc4a32f201ea9cb788fc0ab3e9650a/skema-pos.png)
