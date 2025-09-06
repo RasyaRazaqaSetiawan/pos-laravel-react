@@ -43,7 +43,7 @@ Berikut adalah tabel utama yang digunakan pada aplikasi ini:
 | 5  | **transactions_items**| Detail item transaksi (produk, qty, harga, subtotal).                     |
 
 ### 📷 Diagram Database
-![Database Schema](https://github.com/RasyaRazaqaSetiawan/pos-laravel-react/blob/f2c486824dcc4a32f201ea9cb788fc0ab3e9650a/skema-pos.png)
+![Database Schema](https://github.com/RasyaRazaqaSetiawan/pos-laravel-react/blob/c823c3c8b61748306393b3ab2db2fab5d22a66b9/skema-pos.png)
 
 ---
 
