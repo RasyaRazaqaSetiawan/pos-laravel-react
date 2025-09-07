@@ -32,6 +32,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
     Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
     Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
+    Route::post('/customers/from-transaction', [CustomerController::class, 'storeFromTransaction'])->name('customers.store-from-transaction');
 
     // Transactions
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');

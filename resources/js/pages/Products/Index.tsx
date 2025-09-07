@@ -64,6 +64,28 @@ const Index = () => {
         setSearch('');
     };
 
+    // Function to handle pagination with search preservation
+    const handlePaginationClick = (url: string | null) => {
+        if (!url) return;
+
+        // Parse the URL to get the page parameter
+        const urlObj = new URL(url, window.location.origin);
+        const page = urlObj.searchParams.get('page');
+
+        // Navigate with both page and search parameters
+        router.get(
+            '/products',
+            {
+                page,
+                search: search || undefined, // Only include search if it has a value
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
+    };
+
     return (
         <AppLayout>
             <Head title="Products" />
@@ -184,7 +206,7 @@ const Index = () => {
                                                         <Pen className="h-4 w-4" />
                                                     </Link>
 
-                                                    {product.can_delete && ( // ✅ hanya tampil kalau bisa dihapus
+                                                    {product.can_delete && (
                                                         <button
                                                             onClick={() => handleDelete(product.id)}
                                                             className="rounded bg-red-500 px-3 py-1 text-xs text-white transition-colors hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
@@ -208,12 +230,13 @@ const Index = () => {
                         </table>
                     </div>
 
-                    {/* Pagination */}
+                    {/* Pagination*/}
                     <div className="mt-6 flex justify-end space-x-1">
                         {products.links.map((link, idx) => (
-                            <Link
+                            <button
                                 key={idx}
-                                href={link.url || '#'}
+                                onClick={() => handlePaginationClick(link.url)}
+                                disabled={!link.url}
                                 dangerouslySetInnerHTML={{ __html: link.label }}
                                 className={`rounded-lg border px-3 py-2 text-sm transition-colors duration-200 ${
                                     link.active

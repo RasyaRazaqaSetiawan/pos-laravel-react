@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, Minus, Package, Plus, Search, ShoppingCart, Trash2, User, Edit as EditIcon } from 'lucide-react';
+import { ArrowLeft, EditIcon, Minus, Package, Plus, Search, ShoppingCart, Trash2, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type Customer = {
@@ -51,6 +51,16 @@ export default function Edit() {
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [processing, setProcessing] = useState(false);
 
+    // State for create customer modal
+    const [showCreateCustomerModal, setShowCreateCustomerModal] = useState(false);
+
+    // State for new customer form
+    const [newCustomer, setNewCustomer] = useState({
+        full_name: '',
+        phone: '',
+        email: '',
+    });
+
     // Utility function untuk mendapatkan nama customer
     function getCustomerName(customer: Customer) {
         return customer.full_name || customer.name || '';
@@ -73,6 +83,59 @@ export default function Edit() {
             const search = (customerSearch ?? '').toLowerCase();
             return name.includes(search) || phone.includes(search);
         }) ?? [];
+
+    // Handle Customer
+    // Tambahkan ini ke dalam komponen Create, setelah state declarations
+    const handleCreateCustomer = (e: { preventDefault: () => void }) => {
+        e.preventDefault();
+
+        // Validasi minimal
+        if (!newCustomer.full_name.trim()) {
+            alert('Customer name is required');
+            return;
+        }
+
+        setProcessing(true);
+
+        // Menggunakan Inertia router untuk POST request
+        router.post('/customers', newCustomer, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: (page) => {
+                // Customer baru akan ada di page.props.customers (jika backend mengembalikannya)
+                // Atau bisa juga backend langsung redirect dengan data baru
+
+                // Reset form dan tutup modal
+                setNewCustomer({ full_name: '', phone: '', email: '' });
+                setShowCreateCustomerModal(false);
+                setProcessing(false);
+
+                // Jika backend mengembalikan customer yang baru dibuat dalam response
+                // kita bisa langsung select customer tersebut
+                if (page.props.newCustomer) {
+                    selectCustomer(page.props.newCustomer);
+                }
+
+                // Optional: show success message
+                alert('Customer created successfully');
+            },
+            onError: (errors) => {
+                console.error('Create customer errors:', errors);
+                setProcessing(false);
+
+                // Handle validation errors
+                if (errors.name) {
+                    alert(`Name: ${errors.name}`);
+                } else if (errors.phone) {
+                    alert(`Phone: ${errors.phone}`);
+                } else if (errors.email) {
+                    alert(`Email: ${errors.email}`);
+                } else {
+                    alert('Failed to create customer. Please try again.');
+                }
+            },
+        });
+    };
 
     // Calculate totals
     const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -140,8 +203,15 @@ export default function Edit() {
 
     // Submit updated transaction
     const submitTransaction = () => {
+        // Sama seperti product validation
         if (items.length === 0) {
             alert('Please add at least one item to the transaction.');
+            return;
+        }
+
+        // Sama seperti product validation, tapi untuk customer
+        if (!selectedCustomer) {
+            alert('Please select a customer for this transaction.');
             return;
         }
 
@@ -155,10 +225,10 @@ export default function Edit() {
             })),
         };
 
-        router.put(`/transactions/${transaction.id}`, data, {
+        router.post('/transactions', data, {
             onFinish: () => setProcessing(false),
             onError: (errors) => {
-                console.error('Transaction update errors:', errors);
+                console.error('Transaction errors:', errors);
                 setProcessing(false);
             },
         });
@@ -208,10 +278,19 @@ export default function Edit() {
                         <div className="space-y-6 lg:col-span-2">
                             {/* Customer Selection */}
                             <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-800/30">
-                                <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                    <User className="h-5 w-5" />
-                                    Customer
-                                </h3>
+                                <div className="mb-3 flex items-center justify-between">
+                                    <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                        <User className="h-5 w-5" />
+                                        Customer
+                                    </h3>
+                                    <button
+                                        onClick={() => setShowCreateCustomerModal(true)}
+                                        className="flex items-center gap-2 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                        Add Customer
+                                    </button>
+                                </div>
                                 <div className="relative" onClick={(e) => e.stopPropagation()}>
                                     <div className="relative">
                                         <input
@@ -256,6 +335,88 @@ export default function Edit() {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Create Customer Modal */}
+                            {showCreateCustomerModal && (
+                                <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+                                    <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+                                        <div className="mb-4 flex items-center justify-between">
+                                            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Create New Customer</h2>
+                                            <button
+                                                onClick={() => setShowCreateCustomerModal(false)}
+                                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                            >
+                                                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+
+                                        <form onSubmit={handleCreateCustomer} className="space-y-4">
+                                            <div>
+                                                <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                    Name *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    id="customerName"
+                                                    value={newCustomer.full_name}
+                                                    onChange={(e) => setNewCustomer({ ...newCustomer, full_name: e.target.value })}
+                                                    required
+                                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                                    placeholder="Customer name"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="customerPhone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                    Phone Number *
+                                                </label>
+                                                <input
+                                                    type="tel"
+                                                    id="customerPhone"
+                                                    value={newCustomer.phone}
+                                                    onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                                                    required
+                                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                                    placeholder="Phone number"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="customerEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                    Email
+                                                </label>
+                                                <input
+                                                    type="email"
+                                                    id="customerEmail"
+                                                    value={newCustomer.email}
+                                                    onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                                    placeholder="Email address"
+                                                />
+                                            </div>
+
+                                            <div className="flex justify-end space-x-3 pt-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowCreateCustomerModal(false)}
+                                                    className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    disabled={processing}
+                                                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                                >
+                                                    {processing ? 'Creating...' : 'Create Customer'}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Product Selection */}
                             <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-800/30">
@@ -425,18 +586,18 @@ export default function Edit() {
                             <div className="mt-6 space-y-3">
                                 <button
                                     onClick={submitTransaction}
-                                    disabled={processing || items.length === 0}
+                                    disabled={processing || items.length === 0 || !selectedCustomer}
                                     className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-3 text-white transition-colors duration-200 hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-gray-400"
                                 >
                                     {processing ? (
                                         <>
                                             <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
-                                            Updating...
+                                            Processing...
                                         </>
                                     ) : (
                                         <>
                                             <EditIcon className="h-4 w-4" />
-                                            Update Transaction
+                                            Create Transaction
                                         </>
                                     )}
                                 </button>

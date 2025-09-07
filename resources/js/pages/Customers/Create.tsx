@@ -81,7 +81,7 @@ export default function Create() {
                         {/* Email */}
                         <div>
                             <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Email <span className="text-red-500">*</span>
+                                Email (optional) <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="email"
@@ -92,7 +92,6 @@ export default function Create() {
                                     errors.email ? 'border-red-500 focus:ring-red-500' : 'border-sidebar-border/70 dark:border-sidebar-border'
                                 }`}
                                 placeholder="Enter email address"
-                                required
                             />
                             {errors.email && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email}</p>}
                         </div>

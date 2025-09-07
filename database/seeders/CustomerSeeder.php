@@ -11,6 +11,11 @@ class CustomerSeeder extends Seeder
     {
         DB::table('customers')->insert([
             [
+                'full_name' => 'Rasya Razaqa',
+                'phone' => '085161196033',
+                'email' => '',
+            ],
+            [
                 'full_name' => 'Budi Santoso',
                 'phone' => '081234567890',
                 'email' => 'budi@example.com',

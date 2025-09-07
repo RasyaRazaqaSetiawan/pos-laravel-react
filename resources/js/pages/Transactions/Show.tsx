@@ -8,7 +8,6 @@ import {
     Package,
     Phone,
     // FileText,
-    Printer,
     Tag,
     User,
 } from 'lucide-react';
@@ -82,11 +81,6 @@ export default function Show() {
     // Calculate total items
     const totalItems = transaction.items.reduce((sum, item) => sum + item.qty, 0);
 
-    // Print function (basic)
-    const handlePrint = () => {
-        window.print();
-    };
-
     return (
         <AppLayout>
             <Head title={`Transaction #${transaction.id}`} />
@@ -102,13 +96,6 @@ export default function Show() {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={handlePrint}
-                                className="flex items-center gap-2 rounded-lg bg-gray-500 px-4 py-2 text-white transition-colors duration-200 hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700"
-                            >
-                                <Printer className="h-4 w-4" />
-                                Print
-                            </button>
                             <Link
                                 href={`/transactions/${transaction.id}/edit`}
                                 className="flex items-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-white transition-colors duration-200 hover:bg-yellow-600"

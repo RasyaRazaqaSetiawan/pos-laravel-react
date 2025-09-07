@@ -45,12 +45,12 @@ const Index = () => {
     const [paymentAmount, setPaymentAmount] = useState(0);
     const [processing, setProcessing] = useState(false);
 
-    // Filter products based on search and stock availability
+    // Filter products based on search and stock availability (REMOVED: cart filtering)
     const filteredProducts = products.filter(
         (product) =>
             product.name.toLowerCase().includes(searchProduct.toLowerCase()) &&
-            product.stock > 0 &&
-            !cart.some((cartItem) => cartItem.id === product.id),
+            product.stock > 0
+        // REMOVED: && !cart.some((cartItem) => cartItem.id === product.id)
     );
 
     // Calculate totals
@@ -78,18 +78,38 @@ const Index = () => {
         }).format(validAmount);
     };
 
+    // Get remaining stock for a product (considering cart quantity)
+    const getRemainingStock = (productId: number, originalStock: number) => {
+        const cartItem = cart.find(item => item.id === productId);
+        return originalStock - (cartItem ? cartItem.quantity : 0);
+    };
+
+    // Check if product is already in cart
+    const isProductInCart = (productId: number) => {
+        return cart.some(item => item.id === productId);
+    };
+
     // Cart functions
     const addToCart = (product: Product) => {
-        const newCartItem: CartItem = {
-            id: product.id,
-            name: product.name,
-            price: Number(product.price), // FIXED: Ensure price is a number
-            quantity: 1,
-            subtotal: Number(product.price), // FIXED: Ensure subtotal is properly calculated as number
-            maxStock: product.stock,
-        };
+        const existingCartItem = cart.find(item => item.id === product.id);
 
-        setCart((prevCart) => [...prevCart, newCartItem]);
+        if (existingCartItem) {
+            // If product is already in cart, increase quantity by 1 (if stock allows)
+            if (existingCartItem.quantity < product.stock) {
+                updateQuantity(product.id, existingCartItem.quantity + 1);
+            }
+        } else {
+            // Add new product to cart
+            const newCartItem: CartItem = {
+                id: product.id,
+                name: product.name,
+                price: Number(product.price),
+                quantity: 1,
+                subtotal: Number(product.price),
+                maxStock: product.stock,
+            };
+            setCart((prevCart) => [...prevCart, newCartItem]);
+        }
         setSearchProduct('');
     };
 
@@ -103,7 +123,7 @@ const Index = () => {
             prevCart.map((item) => {
                 if (item.id === id) {
                     const newQuantity = Math.min(quantity, item.maxStock);
-                    const newSubtotal = Number(newQuantity * item.price); // FIXED: Ensure proper number calculation
+                    const newSubtotal = Number(newQuantity * item.price);
                     return {
                         ...item,
                         quantity: newQuantity,
@@ -145,7 +165,7 @@ const Index = () => {
         setProcessing(true);
 
         const transactionData = {
-            customer_id: selectedCustomer.id, // selalu ada ID valid
+            customer_id: selectedCustomer.id,
             items: cart.map((item) => ({
                 product_id: item.id,
                 qty: item.quantity,
@@ -156,7 +176,7 @@ const Index = () => {
             onSuccess: () => {
                 alert('Transaction completed successfully!');
                 clearCart();
-                setSelectedCustomer({ id: 0, full_name: 'Please select customer' }); // reset lagi
+                setSelectedCustomer({ id: 0, full_name: 'Please select customer' });
                 setShowPaymentModal(false);
             },
             onError: (errors) => {
@@ -222,22 +242,57 @@ const Index = () => {
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                                {filteredProducts.map((product) => (
-                                    <div
-                                        key={product.id}
-                                        onClick={() => addToCart(product)}
-                                        className="cursor-pointer rounded-lg border border-transparent bg-gray-50 p-4 transition-all hover:border-blue-200 hover:bg-gray-100 hover:shadow-md dark:bg-gray-800/50 dark:hover:border-blue-800 dark:hover:bg-gray-800"
-                                    >
-                                        <div className="mb-3 flex aspect-square items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-700">
-                                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500">
-                                                <span className="text-lg font-bold text-white">{product.name.charAt(0)}</span>
+                                {filteredProducts.map((product) => {
+                                    const remainingStock = getRemainingStock(product.id, product.stock);
+                                    const inCart = isProductInCart(product.id);
+                                    const canAddMore = remainingStock > 0;
+
+                                    return (
+                                        <div
+                                            key={product.id}
+                                            onClick={() => canAddMore && addToCart(product)}
+                                            className={`rounded-lg border p-4 transition-all ${
+                                                canAddMore
+                                                    ? 'cursor-pointer border-transparent bg-gray-50 hover:border-blue-200 hover:bg-gray-100 hover:shadow-md dark:bg-gray-800/50 dark:hover:border-blue-800 dark:hover:bg-gray-800'
+                                                    : 'cursor-not-allowed border-red-200 bg-red-50 opacity-75 dark:border-red-800 dark:bg-red-900/20'
+                                            } ${
+                                                inCart
+                                                    ? 'border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/30'
+                                                    : ''
+                                            }`}
+                                        >
+                                            <div className="mb-3 flex aspect-square items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-700">
+                                                <div className={`flex h-12 w-12 items-center justify-center rounded-full ${
+                                                    inCart ? 'bg-blue-600' : 'bg-blue-500'
+                                                }`}>
+                                                    <span className="text-lg font-bold text-white">{product.name.charAt(0)}</span>
+                                                </div>
+                                            </div>
+                                            <h3 className="mb-2 line-clamp-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                {product.name}
+                                                {inCart && <span className="ml-1 text-blue-600 dark:text-blue-400">✓</span>}
+                                            </h3>
+                                            <div className="mb-1 text-lg font-bold text-blue-600 dark:text-blue-400">
+                                                {formatCurrency(product.price)}
+                                            </div>
+                                            <div className={`text-xs ${
+                                                remainingStock === 0
+                                                    ? 'text-red-500 dark:text-red-400'
+                                                    : 'text-gray-500 dark:text-gray-400'
+                                            }`}>
+                                                {remainingStock === 0
+                                                    ? 'Out of stock'
+                                                    : `Available: ${remainingStock}`
+                                                }
+                                                {inCart && (
+                                                    <div className="text-blue-600 dark:text-blue-400">
+                                                        In cart: {cart.find(item => item.id === product.id)?.quantity || 0}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                        <h3 className="mb-2 line-clamp-2 text-sm font-medium text-gray-900 dark:text-gray-100">{product.name}</h3>
-                                        <div className="mb-1 text-lg font-bold text-blue-600 dark:text-blue-400">{formatCurrency(product.price)}</div>
-                                        <div className="text-xs text-gray-500 dark:text-gray-400">Stock: {product.stock}</div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
